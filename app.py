@@ -1,5 +1,6 @@
-import os
+ import os
 import time
+import json
 import requests
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -8,17 +9,30 @@ from algorithm import calculate_bsi
 from datetime import datetime, timedelta
 
 import firebase_admin
-from firebase_admin import credentials, firestore, auth
+from firebase_admin import credentials, firestore
 
-# --- Initialize Firebase Admin ---
-cred = credentials.Certificate("serviceAccountKey.json")
-firebase_admin.initialize_app(cred)
+ # --- FIREBASE INITIALIZATION ---
+# 1. Try to load from Render/Cloud Environment Variable first
+service_account_json = os.getenv("FIREBASE_SERVICE_ACCOUNT")
+
+if service_account_json:
+    try:
+        cred_dict = json.loads(service_account_json)
+        cred = credentials.Certificate(cred_dict)
+        firebase_admin.initialize_app(cred)
+        print("Firebase initialized successfully using Environment Variables.")
+    except Exception as e:
+        print(f"Error initializing Firebase from Env Var: {e}")
+else:
+    # 2. Fallback: Use the local file if running on your local machine
+    if os.path.exists("serviceAccountKey.json"):
+        cred = credentials.Certificate("serviceAccountKey.json")
+        firebase_admin.initialize_app(cred)
+        print("Firebase initialized using local serviceAccountKey.json.")
+    else:
+        print("Warning: Firebase credentials not found! Ensure FIREBASE_SERVICE_ACCOUNT is set in Render or serviceAccountKey.json exists locally.")
+
 db = firestore.client()
-# --- END NEW FIREBASE STUFF ---
-
-load_dotenv()
-app = Flask(__name__)
-CORS(app)
 
 # 🔥 ---------------------------
 # ✅ CACHE STORAGE (NEW)
