@@ -1,4 +1,4 @@
-import os
+ import os
 import time
 import json
 import requests
@@ -11,8 +11,12 @@ from datetime import datetime, timedelta
 import firebase_admin
 from firebase_admin import credentials, firestore
 
- # --- FIREBASE INITIALIZATION ---
-# 1. Try to load from Render/Cloud Environment Variable first
+# --- 1. INITIALIZE FLASK FIRST ---
+load_dotenv()
+app = Flask(__name__)
+CORS(app)
+
+# --- 2. INITIALIZE FIREBASE SECOND ---
 service_account_json = os.getenv("FIREBASE_SERVICE_ACCOUNT")
 
 if service_account_json:
@@ -24,13 +28,13 @@ if service_account_json:
     except Exception as e:
         print(f"Error initializing Firebase from Env Var: {e}")
 else:
-    # 2. Fallback: Use the local file if running on your local machine
+    # Fallback: Use the local file ONLY if running on your local machine
     if os.path.exists("serviceAccountKey.json"):
         cred = credentials.Certificate("serviceAccountKey.json")
         firebase_admin.initialize_app(cred)
         print("Firebase initialized using local serviceAccountKey.json.")
     else:
-        print("Warning: Firebase credentials not found! Ensure FIREBASE_SERVICE_ACCOUNT is set in Render or serviceAccountKey.json exists locally.")
+        print("Warning: Firebase credentials not found!")
 
 db = firestore.client()
 
